@@ -6,8 +6,8 @@ Ein Discord Bot mit Abmeldungs- und Sanktionssystem sowie Tuning-Dokumentation f
 
 - **Abmeldungssystem**: Mitarbeiter koennen sich mit Grund und Zeitraum abmelden
 - **Sanktionssystem**: Moderatoren koennen Sanktionen mit Geldstrafen ausstellen
-- **Tuning-Dokumentation**: Erfassung von Tuningchip, Stance und Xenon Modifikationen
-- **Interaktive Panels**: Button-basierte Eingabe ueber Modals
+- **Tuning-Dokumentation**: Erfassung von Tuningchip, Stance und Xenon Modifikationen via Slash Commands
+- **Interaktives Abmeldungs-Panel**: Button-basierte Abmeldung ueber Modal
 
 ## Voraussetzungen
 
@@ -50,11 +50,13 @@ npm start
 - `/sanktionen` - Sanktionen anzeigen
 - `/sanktion-aufheben` - Sanktion aufheben (Moderator)
 
-### Panels (Admin)
+### Tuning-Dokumentation
+- `/tuningchip` - Tuningchip dokumentieren (Kunde, Kennzeichen, Beschreibung, Bild)
+- `/stance` - Stance-Tuning dokumentieren (Kunde, Kennzeichen, Bild)
+- `/xenon` - Xenon-Scheinwerfer dokumentieren (Kunde, Kennzeichen, Farbe, Bild)
+
+### Panel (Admin)
 - `/panel` - Abmeldungs-Panel erstellen
-- `/tuningchip-panel` - Tuningchip-Panel erstellen
-- `/stance-panel` - Stance-Panel erstellen
-- `/xenon-panel` - Xenon-Panel erstellen
 
 ### Info
 - `/userinfo` - Benutzerinformationen anzeigen
