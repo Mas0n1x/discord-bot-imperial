@@ -1,4 +1,5 @@
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, AttachmentBuilder } = require('discord.js');
+// ModalBuilder, TextInputBuilder, TextInputStyle werden nur noch fuer Abmeldungen verwendet
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
@@ -369,164 +370,6 @@ async function updateAbmeldungsPanel(channel) {
   }
 }
 
-// Tuningchip Panel aktualisieren
-async function updateTuningchipPanel(channel) {
-  try {
-    const embed = new EmbedBuilder()
-      .setTitle('Tuningchip Dokumentation')
-      .setDescription('Dokumentiere hier alle Tuningchip-Aenderungen an Fahrzeugen.\n\nKlicke auf den Button um eine neue Aenderung zu erfassen.')
-      .setColor(COLORS.PANEL)
-      .setThumbnail('attachment://logo_firma.png')
-      .setTimestamp();
-
-    const row = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('tuningchip_button')
-          .setLabel('Tuningchip erfassen')
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji('🔧')
-      );
-
-    // Logo laden
-    let attachment = null;
-    if (fs.existsSync(LOGO_PATH)) {
-      attachment = new AttachmentBuilder(LOGO_PATH, { name: 'logo_firma.png' });
-    }
-
-    // Pruefe ob bereits ein Panel existiert - wenn ja, loesche es
-    const panelStmt = db.prepare('SELECT * FROM panel_messages WHERE channel_id = ? AND typ = ?');
-    const existingPanel = panelStmt.get(channel.id, 'tuningchip');
-
-    if (existingPanel) {
-      try {
-        const oldMessage = await channel.messages.fetch(existingPanel.message_id);
-        await oldMessage.delete();
-      } catch (e) {
-        // Nachricht existiert nicht mehr, ignorieren
-      }
-      db.prepare('DELETE FROM panel_messages WHERE id = ?').run(existingPanel.id);
-    }
-
-    // Neues Panel ganz unten erstellen
-    const sendData = { embeds: [embed], components: [row] };
-    if (attachment) sendData.files = [attachment];
-    const message = await channel.send(sendData);
-
-    // Panel-ID speichern
-    db.prepare('INSERT INTO panel_messages (channel_id, message_id, typ) VALUES (?, ?, ?)').run(channel.id, message.id, 'tuningchip');
-
-    return message;
-  } catch (error) {
-    console.error('Fehler beim Aktualisieren des Tuningchip-Panels:', error);
-  }
-}
-
-// Stance Panel aktualisieren
-async function updateStancePanel(channel) {
-  try {
-    const embed = new EmbedBuilder()
-      .setTitle('Stance-Tuning Dokumentation')
-      .setDescription('Dokumentiere hier alle Stance-Tuning Aenderungen an Fahrzeugen.\n\nKlicke auf den Button um eine neue Aenderung zu erfassen.')
-      .setColor(COLORS.PANEL)
-      .setThumbnail('attachment://logo_firma.png')
-      .setTimestamp();
-
-    const row = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('stance_button')
-          .setLabel('Stance-Tuning erfassen')
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji('🚗')
-      );
-
-    // Logo laden
-    let attachment = null;
-    if (fs.existsSync(LOGO_PATH)) {
-      attachment = new AttachmentBuilder(LOGO_PATH, { name: 'logo_firma.png' });
-    }
-
-    // Pruefe ob bereits ein Panel existiert - wenn ja, loesche es
-    const panelStmt = db.prepare('SELECT * FROM panel_messages WHERE channel_id = ? AND typ = ?');
-    const existingPanel = panelStmt.get(channel.id, 'stance');
-
-    if (existingPanel) {
-      try {
-        const oldMessage = await channel.messages.fetch(existingPanel.message_id);
-        await oldMessage.delete();
-      } catch (e) {
-        // Nachricht existiert nicht mehr, ignorieren
-      }
-      db.prepare('DELETE FROM panel_messages WHERE id = ?').run(existingPanel.id);
-    }
-
-    // Neues Panel ganz unten erstellen
-    const sendData = { embeds: [embed], components: [row] };
-    if (attachment) sendData.files = [attachment];
-    const message = await channel.send(sendData);
-
-    // Panel-ID speichern
-    db.prepare('INSERT INTO panel_messages (channel_id, message_id, typ) VALUES (?, ?, ?)').run(channel.id, message.id, 'stance');
-
-    return message;
-  } catch (error) {
-    console.error('Fehler beim Aktualisieren des Stance-Panels:', error);
-  }
-}
-
-// Xenon Panel aktualisieren
-async function updateXenonPanel(channel) {
-  try {
-    const embed = new EmbedBuilder()
-      .setTitle('Xenon-Tuning Dokumentation')
-      .setDescription('Dokumentiere hier alle Xenon-Tuning Aenderungen an Fahrzeugen.\n\nKlicke auf den Button um eine neue Aenderung zu erfassen.')
-      .setColor(COLORS.PANEL)
-      .setThumbnail('attachment://logo_firma.png')
-      .setTimestamp();
-
-    const row = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId('xenon_button')
-          .setLabel('Xenon-Tuning erfassen')
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji('💡')
-      );
-
-    // Logo laden
-    let attachment = null;
-    if (fs.existsSync(LOGO_PATH)) {
-      attachment = new AttachmentBuilder(LOGO_PATH, { name: 'logo_firma.png' });
-    }
-
-    // Pruefe ob bereits ein Panel existiert - wenn ja, loesche es
-    const panelStmt = db.prepare('SELECT * FROM panel_messages WHERE channel_id = ? AND typ = ?');
-    const existingPanel = panelStmt.get(channel.id, 'xenon');
-
-    if (existingPanel) {
-      try {
-        const oldMessage = await channel.messages.fetch(existingPanel.message_id);
-        await oldMessage.delete();
-      } catch (e) {
-        // Nachricht existiert nicht mehr, ignorieren
-      }
-      db.prepare('DELETE FROM panel_messages WHERE id = ?').run(existingPanel.id);
-    }
-
-    // Neues Panel ganz unten erstellen
-    const sendData = { embeds: [embed], components: [row] };
-    if (attachment) sendData.files = [attachment];
-    const message = await channel.send(sendData);
-
-    // Panel-ID speichern
-    db.prepare('INSERT INTO panel_messages (channel_id, message_id, typ) VALUES (?, ?, ?)').run(channel.id, message.id, 'xenon');
-
-    return message;
-  } catch (error) {
-    console.error('Fehler beim Aktualisieren des Xenon-Panels:', error);
-  }
-}
 
 client.once('ready', async () => {
   console.log(`Bot ist online als ${client.user.tag}!`);
@@ -545,38 +388,6 @@ client.once('ready', async () => {
     console.error('Fehler beim Initialisieren des Abmeldungs-Panels:', error);
   }
 
-  // Tuningchip-Panel (nur Panel aktualisieren, Dokumentationen bleiben)
-  try {
-    const channel = await client.channels.fetch(TUNINGCHIP_CHANNEL_ID);
-    if (channel) {
-      await updateTuningchipPanel(channel);
-      console.log('Tuningchip-Panel aktualisiert/erstellt');
-    }
-  } catch (error) {
-    console.error('Fehler beim Initialisieren des Tuningchip-Panels:', error);
-  }
-
-  // Stance-Panel (nur Panel aktualisieren, Dokumentationen bleiben)
-  try {
-    const channel = await client.channels.fetch(STANCE_CHANNEL_ID);
-    if (channel) {
-      await updateStancePanel(channel);
-      console.log('Stance-Panel aktualisiert/erstellt');
-    }
-  } catch (error) {
-    console.error('Fehler beim Initialisieren des Stance-Panels:', error);
-  }
-
-  // Xenon-Panel (nur Panel aktualisieren, Dokumentationen bleiben)
-  try {
-    const channel = await client.channels.fetch(XENON_CHANNEL_ID);
-    if (channel) {
-      await updateXenonPanel(channel);
-      console.log('Xenon-Panel aktualisiert/erstellt');
-    }
-  } catch (error) {
-    console.error('Fehler beim Initialisieren des Xenon-Panels:', error);
-  }
 });
 
 client.on('interactionCreate', async interaction => {
@@ -616,117 +427,6 @@ client.on('interactionCreate', async interaction => {
         new ActionRowBuilder().addComponents(grundInput),
         new ActionRowBuilder().addComponents(vonInput),
         new ActionRowBuilder().addComponents(bisInput)
-      );
-
-      await interaction.showModal(modal);
-    }
-
-    else if (interaction.customId === 'tuningchip_button') {
-      // Modal fuer Tuningchip oeffnen
-      const modal = new ModalBuilder()
-        .setCustomId('tuningchip_modal')
-        .setTitle('Tuningchip Dokumentation');
-
-      const nameInput = new TextInputBuilder()
-        .setCustomId('name')
-        .setLabel('Name des Kunden')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Vor- und Nachname')
-        .setRequired(true)
-        .setMaxLength(100);
-
-      const kennzeichenInput = new TextInputBuilder()
-        .setCustomId('kennzeichen')
-        .setLabel('Kennzeichen (6 Zeichen)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('z.B. ABC123')
-        .setRequired(true)
-        .setMinLength(6)
-        .setMaxLength(6);
-
-      const beschreibungInput = new TextInputBuilder()
-        .setCustomId('beschreibung')
-        .setLabel('Was wurde gemacht?')
-        .setStyle(TextInputStyle.Paragraph)
-        .setPlaceholder('Beschreibe die durchgefuehrten Aenderungen...')
-        .setRequired(true)
-        .setMaxLength(1000);
-
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(nameInput),
-        new ActionRowBuilder().addComponents(kennzeichenInput),
-        new ActionRowBuilder().addComponents(beschreibungInput)
-      );
-
-      await interaction.showModal(modal);
-    }
-
-    else if (interaction.customId === 'stance_button') {
-      // Modal fuer Stance-Tuning oeffnen
-      const modal = new ModalBuilder()
-        .setCustomId('stance_modal')
-        .setTitle('Stance-Tuning Dokumentation');
-
-      const nameInput = new TextInputBuilder()
-        .setCustomId('name')
-        .setLabel('Name des Kunden')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Vor- und Nachname')
-        .setRequired(true)
-        .setMaxLength(100);
-
-      const kennzeichenInput = new TextInputBuilder()
-        .setCustomId('kennzeichen')
-        .setLabel('Kennzeichen (6 Zeichen)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('z.B. ABC123')
-        .setRequired(true)
-        .setMinLength(6)
-        .setMaxLength(6);
-
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(nameInput),
-        new ActionRowBuilder().addComponents(kennzeichenInput)
-      );
-
-      await interaction.showModal(modal);
-    }
-
-    else if (interaction.customId === 'xenon_button') {
-      // Modal fuer Xenon-Tuning oeffnen
-      const modal = new ModalBuilder()
-        .setCustomId('xenon_modal')
-        .setTitle('Xenon-Tuning Dokumentation');
-
-      const nameInput = new TextInputBuilder()
-        .setCustomId('name')
-        .setLabel('Name des Kunden')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('Vor- und Nachname')
-        .setRequired(true)
-        .setMaxLength(100);
-
-      const kennzeichenInput = new TextInputBuilder()
-        .setCustomId('kennzeichen')
-        .setLabel('Kennzeichen (6 Zeichen)')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('z.B. ABC123')
-        .setRequired(true)
-        .setMinLength(6)
-        .setMaxLength(6);
-
-      const farbeInput = new TextInputBuilder()
-        .setCustomId('farbe')
-        .setLabel('Xenon-Farbe')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('z.B. Blau, Weiss, Gelb...')
-        .setRequired(true)
-        .setMaxLength(50);
-
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(nameInput),
-        new ActionRowBuilder().addComponents(kennzeichenInput),
-        new ActionRowBuilder().addComponents(farbeInput)
       );
 
       await interaction.showModal(modal);
@@ -814,387 +514,6 @@ client.on('interactionCreate', async interaction => {
       }
     }
 
-    else if (interaction.customId === 'tuningchip_modal') {
-      const name = interaction.fields.getTextInputValue('name');
-      const kennzeichen = interaction.fields.getTextInputValue('kennzeichen').toUpperCase();
-      const beschreibung = interaction.fields.getTextInputValue('beschreibung');
-      const user = interaction.user;
-      const channel = interaction.channel;
-
-      // Buttons fuer Bild-Upload
-      const row = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(`tuningchip_bild_ja_${user.id}_${kennzeichen}`)
-            .setLabel('Bild hochladen')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('📷'),
-          new ButtonBuilder()
-            .setCustomId(`tuningchip_bild_nein_${user.id}_${kennzeichen}`)
-            .setLabel('Ohne Bild fortfahren')
-            .setStyle(ButtonStyle.Secondary)
-        );
-
-      // Temporaer in DB speichern (ohne Bild)
-      const stmt = db.prepare(`
-        INSERT INTO tuningchip (name, kennzeichen, beschreibung, bild_url, erstellt_von, erstellt_von_name)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-      const result = stmt.run(name, kennzeichen, beschreibung, null, user.id, user.tag);
-      const docId = result.lastInsertRowid;
-
-      await interaction.reply({
-        content: `Moechtest du ein Bild hinzufuegen? Du hast 60 Sekunden Zeit.`,
-        components: [row],
-        ephemeral: true
-      });
-
-      // Button Collector
-      const filter = i => i.user.id === user.id && i.customId.startsWith('tuningchip_bild_');
-      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000, max: 1 });
-
-      collector.on('collect', async i => {
-        if (i.customId.startsWith('tuningchip_bild_ja_')) {
-          await i.update({ content: 'Bitte lade jetzt ein Bild hoch (einfach in den Chat einfuegen). Du hast 60 Sekunden.', components: [] });
-
-          // Warte auf Bild-Nachricht
-          const msgFilter = m => m.author.id === user.id && m.attachments.size > 0;
-          const msgCollector = channel.createMessageCollector({ filter: msgFilter, time: 60000, max: 1 });
-
-          msgCollector.on('collect', async msg => {
-            const bildUrl = msg.attachments.first().url;
-            // Bild-URL in DB updaten
-            db.prepare('UPDATE tuningchip SET bild_url = ? WHERE id = ?').run(bildUrl, docId);
-            // Nachricht loeschen
-            try { await msg.delete(); } catch (e) {}
-
-            // Embed erstellen und posten
-            const embed = new EmbedBuilder()
-              .setTitle('Tuningchip Dokumentation')
-              .setColor(COLORS.SUCCESS)
-              .addFields(
-                { name: 'Kunde', value: name, inline: true },
-                { name: 'Kennzeichen', value: kennzeichen, inline: true },
-                { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true },
-                { name: 'Durchgefuehrte Aenderungen', value: beschreibung }
-              )
-              .setImage(bildUrl)
-              .setFooter({ text: `Dokumentations-ID: #${docId}` })
-              .setTimestamp();
-
-            await channel.send({ embeds: [embed] });
-            await updateTuningchipPanel(channel);
-          });
-
-          msgCollector.on('end', async collected => {
-            if (collected.size === 0) {
-              // Timeout - ohne Bild posten
-              const embed = new EmbedBuilder()
-                .setTitle('Tuningchip Dokumentation')
-                .setColor(COLORS.SUCCESS)
-                .addFields(
-                  { name: 'Kunde', value: name, inline: true },
-                  { name: 'Kennzeichen', value: kennzeichen, inline: true },
-                  { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true },
-                  { name: 'Durchgefuehrte Aenderungen', value: beschreibung }
-                )
-                .setFooter({ text: `Dokumentations-ID: #${docId}` })
-                .setTimestamp();
-
-              await channel.send({ embeds: [embed] });
-              await updateTuningchipPanel(channel);
-            }
-          });
-        } else {
-          // Ohne Bild fortfahren
-          await i.update({ content: 'Dokumentation wird ohne Bild erstellt.', components: [] });
-
-          const embed = new EmbedBuilder()
-            .setTitle('Tuningchip Dokumentation')
-            .setColor(COLORS.SUCCESS)
-            .addFields(
-              { name: 'Kunde', value: name, inline: true },
-              { name: 'Kennzeichen', value: kennzeichen, inline: true },
-              { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true },
-              { name: 'Durchgefuehrte Aenderungen', value: beschreibung }
-            )
-            .setFooter({ text: `Dokumentations-ID: #${docId}` })
-            .setTimestamp();
-
-          await channel.send({ embeds: [embed] });
-          await updateTuningchipPanel(channel);
-        }
-      });
-
-      collector.on('end', async collected => {
-        if (collected.size === 0) {
-          // Timeout - ohne Bild posten
-          const embed = new EmbedBuilder()
-            .setTitle('Tuningchip Dokumentation')
-            .setColor(COLORS.SUCCESS)
-            .addFields(
-              { name: 'Kunde', value: name, inline: true },
-              { name: 'Kennzeichen', value: kennzeichen, inline: true },
-              { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true },
-              { name: 'Durchgefuehrte Aenderungen', value: beschreibung }
-            )
-            .setFooter({ text: `Dokumentations-ID: #${docId}` })
-            .setTimestamp();
-
-          await channel.send({ embeds: [embed] });
-          await updateTuningchipPanel(channel);
-        }
-      });
-    }
-
-    else if (interaction.customId === 'stance_modal') {
-      const name = interaction.fields.getTextInputValue('name');
-      const kennzeichen = interaction.fields.getTextInputValue('kennzeichen').toUpperCase();
-      const user = interaction.user;
-      const channel = interaction.channel;
-
-      // Buttons fuer Bild-Upload
-      const row = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(`stance_bild_ja_${user.id}_${kennzeichen}`)
-            .setLabel('Bild hochladen')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('📷'),
-          new ButtonBuilder()
-            .setCustomId(`stance_bild_nein_${user.id}_${kennzeichen}`)
-            .setLabel('Ohne Bild fortfahren')
-            .setStyle(ButtonStyle.Secondary)
-        );
-
-      // In DB speichern (ohne Bild)
-      const stmt = db.prepare(`
-        INSERT INTO stance (name, kennzeichen, bild_url, erstellt_von, erstellt_von_name)
-        VALUES (?, ?, ?, ?, ?)
-      `);
-      const result = stmt.run(name, kennzeichen, null, user.id, user.tag);
-      const docId = result.lastInsertRowid;
-
-      await interaction.reply({
-        content: `Moechtest du ein Bild hinzufuegen? Du hast 60 Sekunden Zeit.`,
-        components: [row],
-        ephemeral: true
-      });
-
-      // Button Collector
-      const filter = i => i.user.id === user.id && i.customId.startsWith('stance_bild_');
-      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000, max: 1 });
-
-      collector.on('collect', async i => {
-        if (i.customId.startsWith('stance_bild_ja_')) {
-          await i.update({ content: 'Bitte lade jetzt ein Bild hoch (einfach in den Chat einfuegen). Du hast 60 Sekunden.', components: [] });
-
-          // Warte auf Bild-Nachricht
-          const msgFilter = m => m.author.id === user.id && m.attachments.size > 0;
-          const msgCollector = channel.createMessageCollector({ filter: msgFilter, time: 60000, max: 1 });
-
-          msgCollector.on('collect', async msg => {
-            const bildUrl = msg.attachments.first().url;
-            db.prepare('UPDATE stance SET bild_url = ? WHERE id = ?').run(bildUrl, docId);
-            try { await msg.delete(); } catch (e) {}
-
-            const embed = new EmbedBuilder()
-              .setTitle('Stance-Tuning Dokumentation')
-              .setColor(COLORS.SUCCESS)
-              .addFields(
-                { name: 'Kunde', value: name, inline: true },
-                { name: 'Kennzeichen', value: kennzeichen, inline: true },
-                { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
-              )
-              .setImage(bildUrl)
-              .setFooter({ text: `Dokumentations-ID: #${docId}` })
-              .setTimestamp();
-
-            await channel.send({ embeds: [embed] });
-            await updateStancePanel(channel);
-          });
-
-          msgCollector.on('end', async collected => {
-            if (collected.size === 0) {
-              const embed = new EmbedBuilder()
-                .setTitle('Stance-Tuning Dokumentation')
-                .setColor(COLORS.SUCCESS)
-                .addFields(
-                  { name: 'Kunde', value: name, inline: true },
-                  { name: 'Kennzeichen', value: kennzeichen, inline: true },
-                  { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
-                )
-                .setFooter({ text: `Dokumentations-ID: #${docId}` })
-                .setTimestamp();
-
-              await channel.send({ embeds: [embed] });
-              await updateStancePanel(channel);
-            }
-          });
-        } else {
-          await i.update({ content: 'Dokumentation wird ohne Bild erstellt.', components: [] });
-
-          const embed = new EmbedBuilder()
-            .setTitle('Stance-Tuning Dokumentation')
-            .setColor(COLORS.SUCCESS)
-            .addFields(
-              { name: 'Kunde', value: name, inline: true },
-              { name: 'Kennzeichen', value: kennzeichen, inline: true },
-              { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
-            )
-            .setFooter({ text: `Dokumentations-ID: #${docId}` })
-            .setTimestamp();
-
-          await channel.send({ embeds: [embed] });
-          await updateStancePanel(channel);
-        }
-      });
-
-      collector.on('end', async collected => {
-        if (collected.size === 0) {
-          const embed = new EmbedBuilder()
-            .setTitle('Stance-Tuning Dokumentation')
-            .setColor(COLORS.SUCCESS)
-            .addFields(
-              { name: 'Kunde', value: name, inline: true },
-              { name: 'Kennzeichen', value: kennzeichen, inline: true },
-              { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
-            )
-            .setFooter({ text: `Dokumentations-ID: #${docId}` })
-            .setTimestamp();
-
-          await channel.send({ embeds: [embed] });
-          await updateStancePanel(channel);
-        }
-      });
-    }
-
-    else if (interaction.customId === 'xenon_modal') {
-      const name = interaction.fields.getTextInputValue('name');
-      const kennzeichen = interaction.fields.getTextInputValue('kennzeichen').toUpperCase();
-      const farbe = interaction.fields.getTextInputValue('farbe');
-      const user = interaction.user;
-      const channel = interaction.channel;
-
-      // Buttons fuer Bild-Upload
-      const row = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId(`xenon_bild_ja_${user.id}_${kennzeichen}`)
-            .setLabel('Bild hochladen')
-            .setStyle(ButtonStyle.Primary)
-            .setEmoji('📷'),
-          new ButtonBuilder()
-            .setCustomId(`xenon_bild_nein_${user.id}_${kennzeichen}`)
-            .setLabel('Ohne Bild fortfahren')
-            .setStyle(ButtonStyle.Secondary)
-        );
-
-      // In DB speichern (ohne Bild)
-      const stmt = db.prepare(`
-        INSERT INTO xenon (name, kennzeichen, farbe, bild_url, erstellt_von, erstellt_von_name)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-      const result = stmt.run(name, kennzeichen, farbe, null, user.id, user.tag);
-      const docId = result.lastInsertRowid;
-
-      await interaction.reply({
-        content: `Moechtest du ein Bild hinzufuegen? Du hast 60 Sekunden Zeit.`,
-        components: [row],
-        ephemeral: true
-      });
-
-      // Button Collector
-      const filter = i => i.user.id === user.id && i.customId.startsWith('xenon_bild_');
-      const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000, max: 1 });
-
-      collector.on('collect', async i => {
-        if (i.customId.startsWith('xenon_bild_ja_')) {
-          await i.update({ content: 'Bitte lade jetzt ein Bild hoch (einfach in den Chat einfuegen). Du hast 60 Sekunden.', components: [] });
-
-          // Warte auf Bild-Nachricht
-          const msgFilter = m => m.author.id === user.id && m.attachments.size > 0;
-          const msgCollector = channel.createMessageCollector({ filter: msgFilter, time: 60000, max: 1 });
-
-          msgCollector.on('collect', async msg => {
-            const bildUrl = msg.attachments.first().url;
-            db.prepare('UPDATE xenon SET bild_url = ? WHERE id = ?').run(bildUrl, docId);
-            try { await msg.delete(); } catch (e) {}
-
-            const embed = new EmbedBuilder()
-              .setTitle('Xenon-Tuning Dokumentation')
-              .setColor(COLORS.SUCCESS)
-              .addFields(
-                { name: 'Kunde', value: name, inline: true },
-                { name: 'Kennzeichen', value: kennzeichen, inline: true },
-                { name: 'Xenon-Farbe', value: farbe, inline: true },
-                { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
-              )
-              .setImage(bildUrl)
-              .setFooter({ text: `Dokumentations-ID: #${docId}` })
-              .setTimestamp();
-
-            await channel.send({ embeds: [embed] });
-            await updateXenonPanel(channel);
-          });
-
-          msgCollector.on('end', async collected => {
-            if (collected.size === 0) {
-              const embed = new EmbedBuilder()
-                .setTitle('Xenon-Tuning Dokumentation')
-                .setColor(COLORS.SUCCESS)
-                .addFields(
-                  { name: 'Kunde', value: name, inline: true },
-                  { name: 'Kennzeichen', value: kennzeichen, inline: true },
-                  { name: 'Xenon-Farbe', value: farbe, inline: true },
-                  { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
-                )
-                .setFooter({ text: `Dokumentations-ID: #${docId}` })
-                .setTimestamp();
-
-              await channel.send({ embeds: [embed] });
-              await updateXenonPanel(channel);
-            }
-          });
-        } else {
-          await i.update({ content: 'Dokumentation wird ohne Bild erstellt.', components: [] });
-
-          const embed = new EmbedBuilder()
-            .setTitle('Xenon-Tuning Dokumentation')
-            .setColor(COLORS.SUCCESS)
-            .addFields(
-              { name: 'Kunde', value: name, inline: true },
-              { name: 'Kennzeichen', value: kennzeichen, inline: true },
-              { name: 'Xenon-Farbe', value: farbe, inline: true },
-              { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
-            )
-            .setFooter({ text: `Dokumentations-ID: #${docId}` })
-            .setTimestamp();
-
-          await channel.send({ embeds: [embed] });
-          await updateXenonPanel(channel);
-        }
-      });
-
-      collector.on('end', async collected => {
-        if (collected.size === 0) {
-          const embed = new EmbedBuilder()
-            .setTitle('Xenon-Tuning Dokumentation')
-            .setColor(COLORS.SUCCESS)
-            .addFields(
-              { name: 'Kunde', value: name, inline: true },
-              { name: 'Kennzeichen', value: kennzeichen, inline: true },
-              { name: 'Xenon-Farbe', value: farbe, inline: true },
-              { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
-            )
-            .setFooter({ text: `Dokumentations-ID: #${docId}` })
-            .setTimestamp();
-
-          await channel.send({ embeds: [embed] });
-          await updateXenonPanel(channel);
-        }
-      });
-    }
   }
 
   // ==================== SLASH COMMANDS ====================
@@ -1335,54 +654,144 @@ client.on('interactionCreate', async interaction => {
       }
     }
 
-    else if (commandName === 'tuningchip-panel') {
-      if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
-        await interaction.reply({ content: 'Du hast keine Berechtigung fuer diesen Befehl.', ephemeral: true });
-        return;
-      }
+    // ==================== TUNING DOKUMENTATION ====================
 
-      await interaction.deferReply({ ephemeral: true });
+    else if (commandName === 'tuningchip') {
+      const kunde = options.getString('kunde');
+      const kennzeichen = options.getString('kennzeichen').toUpperCase();
+      const beschreibung = options.getString('beschreibung');
+      const bild = options.getAttachment('bild');
 
       try {
-        await updateTuningchipPanel(interaction.channel);
-        await interaction.editReply({ content: 'Tuningchip-Panel wurde erstellt/aktualisiert!' });
+        // In DB speichern
+        const stmt = db.prepare(`
+          INSERT INTO tuningchip (name, kennzeichen, beschreibung, bild_url, erstellt_von, erstellt_von_name)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        const result = stmt.run(kunde, kennzeichen, beschreibung, bild.url, user.id, user.tag);
+        const docId = result.lastInsertRowid;
+
+        // Embed erstellen
+        const embed = new EmbedBuilder()
+          .setTitle('Tuningchip Dokumentation')
+          .setColor(COLORS.SUCCESS)
+          .addFields(
+            { name: 'Kunde', value: kunde, inline: true },
+            { name: 'Kennzeichen', value: kennzeichen, inline: true },
+            { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true },
+            { name: 'Durchgefuehrte Aenderungen', value: beschreibung }
+          )
+          .setImage(bild.url)
+          .setFooter({ text: `Dokumentations-ID: #${docId}` })
+          .setTimestamp();
+
+        // Ephemeral Bestaetigung
+        await interaction.reply({ content: 'Dokumentation wurde erfasst!', ephemeral: true });
+
+        // Im Tuningchip-Kanal posten
+        try {
+          const tuningChannel = await client.channels.fetch(TUNINGCHIP_CHANNEL_ID);
+          if (tuningChannel) {
+            await tuningChannel.send({ embeds: [embed] });
+          }
+        } catch (e) {
+          console.error('Fehler beim Senden in Tuningchip-Kanal:', e);
+        }
       } catch (error) {
         console.error(error);
-        await interaction.editReply({ content: 'Fehler beim Erstellen des Tuningchip-Panels.' });
+        await interaction.reply({ content: 'Fehler beim Speichern der Dokumentation.', ephemeral: true });
       }
     }
 
-    else if (commandName === 'stance-panel') {
-      if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
-        await interaction.reply({ content: 'Du hast keine Berechtigung fuer diesen Befehl.', ephemeral: true });
-        return;
-      }
-
-      await interaction.deferReply({ ephemeral: true });
+    else if (commandName === 'stance') {
+      const kunde = options.getString('kunde');
+      const kennzeichen = options.getString('kennzeichen').toUpperCase();
+      const bild = options.getAttachment('bild');
 
       try {
-        await updateStancePanel(interaction.channel);
-        await interaction.editReply({ content: 'Stance-Panel wurde erstellt/aktualisiert!' });
+        // In DB speichern
+        const stmt = db.prepare(`
+          INSERT INTO stance (name, kennzeichen, bild_url, erstellt_von, erstellt_von_name)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+        const result = stmt.run(kunde, kennzeichen, bild.url, user.id, user.tag);
+        const docId = result.lastInsertRowid;
+
+        // Embed erstellen
+        const embed = new EmbedBuilder()
+          .setTitle('Stance-Tuning Dokumentation')
+          .setColor(COLORS.SUCCESS)
+          .addFields(
+            { name: 'Kunde', value: kunde, inline: true },
+            { name: 'Kennzeichen', value: kennzeichen, inline: true },
+            { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
+          )
+          .setImage(bild.url)
+          .setFooter({ text: `Dokumentations-ID: #${docId}` })
+          .setTimestamp();
+
+        // Ephemeral Bestaetigung
+        await interaction.reply({ content: 'Dokumentation wurde erfasst!', ephemeral: true });
+
+        // Im Stance-Kanal posten
+        try {
+          const stanceChannel = await client.channels.fetch(STANCE_CHANNEL_ID);
+          if (stanceChannel) {
+            await stanceChannel.send({ embeds: [embed] });
+          }
+        } catch (e) {
+          console.error('Fehler beim Senden in Stance-Kanal:', e);
+        }
       } catch (error) {
         console.error(error);
-        await interaction.editReply({ content: 'Fehler beim Erstellen des Stance-Panels.' });
+        await interaction.reply({ content: 'Fehler beim Speichern der Dokumentation.', ephemeral: true });
       }
     }
 
-    else if (commandName === 'xenon-panel') {
-      if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
-        await interaction.reply({ content: 'Du hast keine Berechtigung fuer diesen Befehl.', ephemeral: true });
-        return;
-      }
-
-      await interaction.deferReply({ ephemeral: true });
+    else if (commandName === 'xenon') {
+      const kunde = options.getString('kunde');
+      const kennzeichen = options.getString('kennzeichen').toUpperCase();
+      const farbe = options.getString('farbe');
+      const bild = options.getAttachment('bild');
 
       try {
-        await updateXenonPanel(interaction.channel);
-        await interaction.editReply({ content: 'Xenon-Panel wurde erstellt/aktualisiert!' });
+        // In DB speichern
+        const stmt = db.prepare(`
+          INSERT INTO xenon (name, kennzeichen, farbe, bild_url, erstellt_von, erstellt_von_name)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        const result = stmt.run(kunde, kennzeichen, farbe, bild.url, user.id, user.tag);
+        const docId = result.lastInsertRowid;
+
+        // Embed erstellen
+        const embed = new EmbedBuilder()
+          .setTitle('Xenon-Scheinwerfer Dokumentation')
+          .setColor(COLORS.SUCCESS)
+          .addFields(
+            { name: 'Kunde', value: kunde, inline: true },
+            { name: 'Kennzeichen', value: kennzeichen, inline: true },
+            { name: 'Xenon-Farbe', value: farbe, inline: true },
+            { name: 'Bearbeitet von', value: `<@${user.id}>`, inline: true }
+          )
+          .setImage(bild.url)
+          .setFooter({ text: `Dokumentations-ID: #${docId}` })
+          .setTimestamp();
+
+        // Ephemeral Bestaetigung
+        await interaction.reply({ content: 'Dokumentation wurde erfasst!', ephemeral: true });
+
+        // Im Xenon-Kanal posten
+        try {
+          const xenonChannel = await client.channels.fetch(XENON_CHANNEL_ID);
+          if (xenonChannel) {
+            await xenonChannel.send({ embeds: [embed] });
+          }
+        } catch (e) {
+          console.error('Fehler beim Senden in Xenon-Kanal:', e);
+        }
       } catch (error) {
         console.error(error);
-        await interaction.editReply({ content: 'Fehler beim Erstellen des Xenon-Panels.' });
+        await interaction.reply({ content: 'Fehler beim Speichern der Dokumentation.', ephemeral: true });
       }
     }
 

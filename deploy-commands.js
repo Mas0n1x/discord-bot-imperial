@@ -109,17 +109,68 @@ const commands = [
     .setName('panel')
     .setDescription('Erstelle/Aktualisiere das Abmeldungs-Panel im aktuellen Kanal'),
 
+  // ==================== TUNING DOKUMENTATION ====================
   new SlashCommandBuilder()
-    .setName('tuningchip-panel')
-    .setDescription('Erstelle/Aktualisiere das Tuningchip-Panel im aktuellen Kanal'),
+    .setName('tuningchip')
+    .setDescription('Dokumentiere eine Tuningchip-Aenderung')
+    .addStringOption(option =>
+      option.setName('kunde')
+        .setDescription('Name des Kunden')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('kennzeichen')
+        .setDescription('Kennzeichen des Fahrzeugs (6 Zeichen)')
+        .setRequired(true)
+        .setMinLength(6)
+        .setMaxLength(6))
+    .addStringOption(option =>
+      option.setName('beschreibung')
+        .setDescription('Was wurde gemacht?')
+        .setRequired(true))
+    .addAttachmentOption(option =>
+      option.setName('bild')
+        .setDescription('Bild der Aenderung')
+        .setRequired(true)),
 
   new SlashCommandBuilder()
-    .setName('stance-panel')
-    .setDescription('Erstelle/Aktualisiere das Stance-Tuning-Panel im aktuellen Kanal'),
+    .setName('stance')
+    .setDescription('Dokumentiere eine Stance-Tuning Aenderung')
+    .addStringOption(option =>
+      option.setName('kunde')
+        .setDescription('Name des Kunden')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('kennzeichen')
+        .setDescription('Kennzeichen des Fahrzeugs (6 Zeichen)')
+        .setRequired(true)
+        .setMinLength(6)
+        .setMaxLength(6))
+    .addAttachmentOption(option =>
+      option.setName('bild')
+        .setDescription('Bild der Aenderung')
+        .setRequired(true)),
 
   new SlashCommandBuilder()
-    .setName('xenon-panel')
-    .setDescription('Erstelle/Aktualisiere das Xenon-Tuning-Panel im aktuellen Kanal'),
+    .setName('xenon')
+    .setDescription('Dokumentiere eine Xenon-Scheinwerfer Aenderung')
+    .addStringOption(option =>
+      option.setName('kunde')
+        .setDescription('Name des Kunden')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('kennzeichen')
+        .setDescription('Kennzeichen des Fahrzeugs (6 Zeichen)')
+        .setRequired(true)
+        .setMinLength(6)
+        .setMaxLength(6))
+    .addStringOption(option =>
+      option.setName('farbe')
+        .setDescription('Xenon-Farbe')
+        .setRequired(true))
+    .addAttachmentOption(option =>
+      option.setName('bild')
+        .setDescription('Bild der Aenderung')
+        .setRequired(true)),
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
