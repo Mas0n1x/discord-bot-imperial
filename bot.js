@@ -497,7 +497,8 @@ client.on('interactionCreate', async interaction => {
           INSERT INTO abmeldungen (user_id, username, grund, von, bis)
           VALUES (?, ?, ?, ?, ?)
         `);
-        stmt.run(user.id, user.tag, grund, von, bis);
+        const displayName = interaction.member?.displayName || user.tag;
+        stmt.run(user.id, displayName, grund, von, bis);
 
         // Nur ephemeral bestaetigen, keine sichtbare Nachricht
         await interaction.reply({
@@ -532,7 +533,8 @@ client.on('interactionCreate', async interaction => {
           INSERT INTO abmeldungen (user_id, username, grund, von, bis)
           VALUES (?, ?, ?, ?, ?)
         `);
-        stmt.run(user.id, user.tag, grund, von, bis);
+        const displayName = member?.displayName || user.tag;
+        stmt.run(user.id, displayName, grund, von, bis);
 
         // Ephemeral Bestaetigung
         await interaction.reply({

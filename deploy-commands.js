@@ -119,10 +119,8 @@ const commands = [
         .setRequired(true))
     .addStringOption(option =>
       option.setName('kennzeichen')
-        .setDescription('Kennzeichen des Fahrzeugs (6 Zeichen)')
-        .setRequired(true)
-        .setMinLength(6)
-        .setMaxLength(6))
+        .setDescription('Kennzeichen des Fahrzeugs')
+        .setRequired(true))
     .addStringOption(option =>
       option.setName('beschreibung')
         .setDescription('Was wurde gemacht?')
@@ -141,10 +139,8 @@ const commands = [
         .setRequired(true))
     .addStringOption(option =>
       option.setName('kennzeichen')
-        .setDescription('Kennzeichen des Fahrzeugs (6 Zeichen)')
-        .setRequired(true)
-        .setMinLength(6)
-        .setMaxLength(6))
+        .setDescription('Kennzeichen des Fahrzeugs')
+        .setRequired(true))
     .addAttachmentOption(option =>
       option.setName('bild')
         .setDescription('Bild der Aenderung')
@@ -159,10 +155,8 @@ const commands = [
         .setRequired(true))
     .addStringOption(option =>
       option.setName('kennzeichen')
-        .setDescription('Kennzeichen des Fahrzeugs (6 Zeichen)')
-        .setRequired(true)
-        .setMinLength(6)
-        .setMaxLength(6))
+        .setDescription('Kennzeichen des Fahrzeugs')
+        .setRequired(true))
     .addStringOption(option =>
       option.setName('farbe')
         .setDescription('Xenon-Farbe')
