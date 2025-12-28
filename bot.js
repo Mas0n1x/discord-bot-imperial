@@ -6,26 +6,39 @@ const fs = require('fs');
 
 // ==================== SINGLETON LOCK ====================
 // Verhindert mehrere Bot-Instanzen gleichzeitig
-const LOCK_FILE = path.join(__dirname, 'bot.lock');
+// In Docker-Containern ist PID 1 immer der Hauptprozess, daher nutzen wir /tmp für Lock-Dateien
+const LOCK_FILE = process.env.DOCKER_CONTAINER ? '/tmp/bot.lock' : path.join(__dirname, 'bot.lock');
 
 function acquireLock() {
   try {
+    // In Docker: Lock-Datei beim Start immer entfernen (Container-Neustart)
+    // PID 1 Check ist in Docker nicht zuverlässig, da PID 1 immer existiert
+    if (process.pid === 1 && fs.existsSync(LOCK_FILE)) {
+      console.log('Docker-Container erkannt (PID 1), entferne alte Lock-Datei...');
+      fs.unlinkSync(LOCK_FILE);
+    }
+
     // Prüfe ob Lock-Datei existiert
     if (fs.existsSync(LOCK_FILE)) {
       const lockData = JSON.parse(fs.readFileSync(LOCK_FILE, 'utf8'));
       const lockPid = lockData.pid;
       const lockTime = lockData.timestamp;
 
-      // Prüfe ob der Prozess noch läuft
-      try {
-        process.kill(lockPid, 0); // Signal 0 prüft nur ob Prozess existiert
-        // Prozess läuft noch - Lock ist aktiv
-        console.error(`FEHLER: Bot läuft bereits! (PID: ${lockPid}, gestartet: ${new Date(lockTime).toLocaleString('de-DE')})`);
-        console.error('Beende diesen Prozess...');
-        process.exit(1);
-      } catch (e) {
-        // Prozess läuft nicht mehr - alter Lock, kann überschrieben werden
-        console.log('Alter Lock gefunden, Prozess existiert nicht mehr. Übernehme Lock...');
+      // Prüfe ob der Prozess noch läuft (nur sinnvoll wenn nicht PID 1)
+      if (lockPid !== 1) {
+        try {
+          process.kill(lockPid, 0); // Signal 0 prüft nur ob Prozess existiert
+          // Prozess läuft noch - Lock ist aktiv
+          console.error(`FEHLER: Bot läuft bereits! (PID: ${lockPid}, gestartet: ${new Date(lockTime).toLocaleString('de-DE')})`);
+          console.error('Beende diesen Prozess...');
+          process.exit(1);
+        } catch (e) {
+          // Prozess läuft nicht mehr - alter Lock, kann überschrieben werden
+          console.log('Alter Lock gefunden, Prozess existiert nicht mehr. Übernehme Lock...');
+        }
+      } else {
+        // PID 1 Lock - in Docker bedeutet dies Container-Neustart
+        console.log('Alter PID-1-Lock gefunden, überschreibe (Container-Neustart)...');
       }
     }
 
