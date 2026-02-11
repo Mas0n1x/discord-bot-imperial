@@ -165,6 +165,25 @@ const commands = [
       option.setName('bild')
         .setDescription('Bild der Aenderung')
         .setRequired(true)),
+
+  // ==================== EIGENTUNING ====================
+  new SlashCommandBuilder()
+    .setName('eigentuning')
+    .setDescription('Dokumentiere ein Eigentuning mit Rechnungsinformationen')
+    .addStringOption(option =>
+      option.setName('rechnungssteller')
+        .setDescription('Wer hat die Rechnung ausgestellt?')
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName('einkaufspreis')
+        .setDescription('Einkaufspreis in $')
+        .setRequired(true)
+        .setMinValue(0))
+    .addIntegerOption(option =>
+      option.setName('rechnungshoehe')
+        .setDescription('Hoehe der ausgestellten Rechnung in $')
+        .setRequired(true)
+        .setMinValue(0)),
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);

@@ -167,6 +167,16 @@ db.exec(`
     erstellt_von_name TEXT NOT NULL,
     erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS eigentuning (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    erstellt_von TEXT NOT NULL,
+    erstellt_von_name TEXT NOT NULL,
+    rechnungssteller TEXT NOT NULL,
+    einkaufspreis INTEGER NOT NULL,
+    rechnungshoehe INTEGER NOT NULL,
+    erstellt_am DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration: geldstrafe Spalte hinzufuegen falls nicht vorhanden
@@ -807,6 +817,58 @@ client.on('interactionCreate', async interaction => {
       } catch (error) {
         console.error(error);
         await interaction.reply({ content: 'Fehler beim Speichern der Dokumentation.', ephemeral: true });
+      }
+    }
+
+    // ==================== EIGENTUNING ====================
+
+    else if (commandName === 'eigentuning') {
+      const rechnungssteller = options.getString('rechnungssteller');
+      const einkaufspreis = options.getInteger('einkaufspreis');
+      const rechnungshoehe = options.getInteger('rechnungshoehe');
+      const displayName = member?.nickname || member?.nick || member?.displayName || user.tag;
+
+      try {
+        // In DB speichern
+        const stmt = db.prepare(`
+          INSERT INTO eigentuning (erstellt_von, erstellt_von_name, rechnungssteller, einkaufspreis, rechnungshoehe)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+        const result = stmt.run(user.id, displayName, rechnungssteller, einkaufspreis, rechnungshoehe);
+        const docId = result.lastInsertRowid;
+
+        // Embed erstellen
+        const embed = new EmbedBuilder()
+          .setTitle('Eigentuning Dokumentation')
+          .setColor(COLORS.SUCCESS)
+          .addFields(
+            { name: 'Eigentuning von', value: displayName, inline: true },
+            { name: 'Rechnungsausstellung von', value: rechnungssteller, inline: true },
+            { name: '\u200B', value: '\u200B', inline: true },
+            { name: 'Einkaufspreis', value: `$${einkaufspreis.toLocaleString('de-DE')}`, inline: true },
+            { name: 'Hoehe der ausgestellten Rechnung', value: `$${rechnungshoehe.toLocaleString('de-DE')}`, inline: true }
+          )
+          .setFooter({ text: `Dokumentations-ID: #${docId}` })
+          .setTimestamp();
+
+        // Logo laden
+        let attachment = null;
+        if (fs.existsSync(LOGO_PATH)) {
+          attachment = new AttachmentBuilder(LOGO_PATH, { name: 'logo_firma.png' });
+          embed.setThumbnail('attachment://logo_firma.png');
+        }
+
+        // Ephemeral Bestaetigung
+        await interaction.reply({ content: 'Eigentuning wurde dokumentiert!', ephemeral: true });
+
+        // Im selben Kanal posten
+        const sendData = { embeds: [embed] };
+        if (attachment) sendData.files = [attachment];
+        await interaction.channel.send(sendData);
+
+      } catch (error) {
+        console.error(error);
+        await interaction.reply({ content: 'Fehler beim Speichern des Eigentunings.', ephemeral: true });
       }
     }
 
