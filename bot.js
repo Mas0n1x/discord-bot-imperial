@@ -83,8 +83,17 @@ process.on('SIGINT', () => { releaseLock(); process.exit(0); });
 process.on('SIGTERM', () => { releaseLock(); process.exit(0); });
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
+  // Discord API Fehler (z.B. Unknown interaction) sind nicht kritisch - Bot weiterlaufen lassen
+  if (err.code && typeof err.code === 'number') {
+    console.error('Discord API Fehler - Bot laeuft weiter');
+    return;
+  }
   releaseLock();
   process.exit(1);
+});
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+  // Nicht crashen bei Promise-Fehlern (z.B. Discord API Timeouts)
 });
 
 // .env manuell laden
@@ -414,6 +423,7 @@ client.once('ready', async () => {
 });
 
 client.on('interactionCreate', async interaction => {
+  try {
   // ==================== BUTTON INTERAKTIONEN ====================
   if (interaction.isButton()) {
     if (interaction.customId === 'abmelden_button') {
@@ -484,6 +494,9 @@ client.on('interactionCreate', async interaction => {
   // ==================== MODAL INTERAKTIONEN ====================
   else if (interaction.isModalSubmit()) {
     if (interaction.customId === 'abmeldung_modal') {
+      // Sofort deferReply um 3-Sekunden-Timeout zu vermeiden
+      await interaction.deferReply({ ephemeral: true });
+
       const grund = interaction.fields.getTextInputValue('grund');
       const vonRaw = interaction.fields.getTextInputValue('von');
       const bisRaw = interaction.fields.getTextInputValue('bis');
@@ -506,12 +519,12 @@ client.on('interactionCreate', async interaction => {
       const bisDate = new Date(bis);
 
       if (isNaN(vonDate.getTime()) || isNaN(bisDate.getTime())) {
-        await interaction.reply({ content: 'Ungueltiges Datumsformat. Bitte verwende TT.MM.JJJJ', ephemeral: true });
+        await interaction.editReply({ content: 'Ungueltiges Datumsformat. Bitte verwende TT.MM.JJJJ' });
         return;
       }
 
       if (bisDate < vonDate) {
-        await interaction.reply({ content: 'Das Enddatum muss nach dem Startdatum liegen.', ephemeral: true });
+        await interaction.editReply({ content: 'Das Enddatum muss nach dem Startdatum liegen.' });
         return;
       }
 
@@ -524,9 +537,8 @@ client.on('interactionCreate', async interaction => {
         stmt.run(user.id, displayName, grund, von, bis);
 
         // Nur ephemeral bestaetigen, keine sichtbare Nachricht
-        await interaction.reply({
-          content: `Deine Abmeldung vom ${formatDate(von)} bis ${formatDate(bis)} wurde erfasst.`,
-          ephemeral: true
+        await interaction.editReply({
+          content: `Deine Abmeldung vom ${formatDate(von)} bis ${formatDate(bis)} wurde erfasst.`
         });
 
         // Panel aktualisieren (loescht altes, erstellt neues unten)
@@ -534,7 +546,11 @@ client.on('interactionCreate', async interaction => {
 
       } catch (error) {
         console.error(error);
-        await interaction.reply({ content: 'Fehler beim Speichern der Abmeldung.', ephemeral: true });
+        try {
+          await interaction.editReply({ content: 'Fehler beim Speichern der Abmeldung.' });
+        } catch (e) {
+          console.error('Konnte Fehlermeldung nicht senden:', e.message);
+        }
       }
     }
 
@@ -1066,6 +1082,19 @@ client.on('interactionCreate', async interaction => {
         console.error(error);
         await interaction.reply({ content: 'Fehler beim Abrufen der Benutzerinfo.', ephemeral: true });
       }
+    }
+  }
+  } catch (error) {
+    console.error('Fehler im interactionCreate Handler:', error);
+    // Versuche dem User eine Fehlermeldung zu senden
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content: 'Ein unerwarteter Fehler ist aufgetreten.' });
+      } else {
+        await interaction.reply({ content: 'Ein unerwarteter Fehler ist aufgetreten.', ephemeral: true });
+      }
+    } catch (e) {
+      // Ignorieren - Interaktion ist wahrscheinlich abgelaufen
     }
   }
 });
