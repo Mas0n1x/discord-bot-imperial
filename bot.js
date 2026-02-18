@@ -1,5 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, AttachmentBuilder } = require('discord.js');
-// ModalBuilder, TextInputBuilder, TextInputStyle werden nur noch fuer Abmeldungen verwendet
+const { Client, GatewayIntentBits, EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, LabelBuilder, TextInputBuilder, TextInputStyle, AttachmentBuilder } = require('discord.js');
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
@@ -229,67 +228,6 @@ const COLORS = {
   PANEL: 0x2b2d31
 };
 
-// Hilfsfunktion: Alle Nachrichten in einem Kanal loeschen (fuer Tuning-Kanaele)
-async function clearChannel(channel) {
-  try {
-    let totalDeleted = 0;
-    let iterations = 0;
-    const maxIterations = 50; // Sicherheitslimit
-
-    while (iterations < maxIterations) {
-      iterations++;
-      const messages = await channel.messages.fetch({ limit: 100 });
-
-      if (messages.size === 0) {
-        console.log(`Kanal ${channel.name} geleert - ${totalDeleted} Nachrichten geloescht`);
-        break;
-      }
-
-      // Filtere Nachrichten die juenger als 14 Tage sind (Discord Limit fuer bulkDelete)
-      const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-      const deletable = messages.filter(m => m.createdTimestamp > twoWeeksAgo);
-      const oldMessages = messages.filter(m => m.createdTimestamp <= twoWeeksAgo);
-
-      let deletedCount = 0;
-
-      // Bulk delete fuer neuere Nachrichten
-      if (deletable.size > 0) {
-        try {
-          const deleted = await channel.bulkDelete(deletable, true);
-          deletedCount += deleted.size;
-        } catch (e) {
-          console.error('Bulk delete Fehler:', e.message);
-        }
-      }
-
-      // Einzeln loeschen fuer aeltere Nachrichten (mit Rate-Limit Pause)
-      for (const msg of oldMessages.values()) {
-        try {
-          await msg.delete();
-          deletedCount++;
-          // Kurze Pause um Rate-Limits zu vermeiden
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (e) {
-          // Ignorieren wenn Nachricht nicht geloescht werden kann
-        }
-      }
-
-      totalDeleted += deletedCount;
-
-      // Wenn nichts mehr geloescht werden konnte, abbrechen
-      if (deletedCount === 0) {
-        console.log(`Keine weiteren Nachrichten loeschbar in ${channel.name}`);
-        break;
-      }
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Fehler beim Loeschen der Nachrichten:', error);
-    return false;
-  }
-}
-
 // Hilfsfunktion: Abgelaufene Abmeldungen deaktivieren
 function deactivateExpiredAbmeldungen() {
   const heute = new Date();
@@ -420,6 +358,22 @@ client.once('ready', async () => {
     console.error('Fehler beim Initialisieren des Abmeldungs-Panels:', error);
   }
 
+  // Periodischer Cleanup: Abgelaufene Abmeldungen stuendlich pruefen
+  setInterval(async () => {
+    const changes = deactivateExpiredAbmeldungen();
+    if (changes > 0) {
+      try {
+        const channel = await client.channels.fetch(ABMELDUNG_CHANNEL_ID);
+        if (channel) {
+          await updateAbmeldungsPanel(channel);
+          console.log('Panel nach automatischem Cleanup aktualisiert');
+        }
+      } catch (e) {
+        console.error('Fehler beim Panel-Update nach Cleanup:', e);
+      }
+    }
+  }, 60 * 60 * 1000); // Jede Stunde
+
 });
 
 client.on('interactionCreate', async interaction => {
@@ -434,7 +388,6 @@ client.on('interactionCreate', async interaction => {
 
       const grundInput = new TextInputBuilder()
         .setCustomId('grund')
-        .setLabel('Grund der Abmeldung')
         .setStyle(TextInputStyle.Paragraph)
         .setPlaceholder('z.B. Urlaub, Krankheit, Private Gruende...')
         .setRequired(true)
@@ -442,7 +395,6 @@ client.on('interactionCreate', async interaction => {
 
       const vonInput = new TextInputBuilder()
         .setCustomId('von')
-        .setLabel('Von (Datum)')
         .setStyle(TextInputStyle.Short)
         .setPlaceholder('TT.MM.JJJJ (z.B. 25.12.2024)')
         .setRequired(true)
@@ -450,16 +402,15 @@ client.on('interactionCreate', async interaction => {
 
       const bisInput = new TextInputBuilder()
         .setCustomId('bis')
-        .setLabel('Bis (Datum)')
         .setStyle(TextInputStyle.Short)
         .setPlaceholder('TT.MM.JJJJ (z.B. 31.12.2024)')
         .setRequired(true)
         .setMaxLength(10);
 
-      modal.addComponents(
-        new ActionRowBuilder().addComponents(grundInput),
-        new ActionRowBuilder().addComponents(vonInput),
-        new ActionRowBuilder().addComponents(bisInput)
+      modal.addLabelComponents(
+        new LabelBuilder().setLabel('Grund der Abmeldung').setTextInputComponent(grundInput),
+        new LabelBuilder().setLabel('Von (Datum)').setTextInputComponent(vonInput),
+        new LabelBuilder().setLabel('Bis (Datum)').setTextInputComponent(bisInput)
       );
 
       await interaction.showModal(modal);
@@ -627,7 +578,7 @@ client.on('interactionCreate', async interaction => {
           .setColor(COLORS.INFO)
           .setTimestamp();
 
-        rows.forEach((row, index) => {
+        rows.forEach((row) => {
           embed.addFields({
             name: `#${row.id} - ${row.username}`,
             value: `**Von:** ${formatDate(row.von)} | **Bis:** ${formatDate(row.bis)}\n**Grund:** ${row.grund}`
@@ -1096,6 +1047,35 @@ client.on('interactionCreate', async interaction => {
     } catch (e) {
       // Ignorieren - Interaktion ist wahrscheinlich abgelaufen
     }
+  }
+});
+
+// ==================== MEMBER LEAVE EVENT ====================
+// Abmeldungen deaktivieren wenn ein Mitglied den Server verlaesst
+client.on('guildMemberRemove', async member => {
+  try {
+    const stmt = db.prepare(`
+      UPDATE abmeldungen
+      SET aktiv = 0
+      WHERE aktiv = 1 AND user_id = ?
+    `);
+    const result = stmt.run(member.id);
+
+    if (result.changes > 0) {
+      console.log(`${result.changes} Abmeldung(en) von ${member.user.tag} deaktiviert (Server verlassen)`);
+
+      // Panel aktualisieren
+      try {
+        const channel = await client.channels.fetch(ABMELDUNG_CHANNEL_ID);
+        if (channel) {
+          await updateAbmeldungsPanel(channel);
+        }
+      } catch (e) {
+        console.error('Fehler beim Aktualisieren des Panels nach Member-Leave:', e);
+      }
+    }
+  } catch (error) {
+    console.error('Fehler im guildMemberRemove Handler:', error);
   }
 });
 
